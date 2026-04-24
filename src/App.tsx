@@ -30,17 +30,25 @@ export default function App() {
   const [isInitializing, setIsInitializing] = React.useState(true);
 
   useEffect(() => {
-    if (!supabase) {
-      setIsInitializing(false);
-      return;
-    }
+    let mounted = true;
 
-    // Check initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    async function initializeAuth() {
+      if (!supabase) {
+        if (mounted) setIsInitializing(false);
+        return;
+      }
+
       try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+           console.error('Session error:', error);
+        }
+        const session = data?.session;
+
         if (session?.user) {
           setAuthenticated(true);
-          if (!useAppStore.getState().userName) {
+          const currentName = useAppStore.getState().userName;
+          if (!currentName) {
              setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.nickname || session.user.email?.split('@')[0] || 'Usuário');
           }
           await syncFromSupabase(session.user.id, 'alaias-storage');
@@ -50,29 +58,36 @@ export default function App() {
       } catch (e) {
         console.error('Error during initial session load:', e);
       } finally {
-        setIsInitializing(false);
+        if (mounted) setIsInitializing(false);
       }
-    });
+    }
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setAuthenticated(true);
-        if (!useAppStore.getState().userName) {
-           setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.nickname || session.user.email?.split('@')[0] || 'Usuário');
-        }
-        if (event === 'SIGNED_IN') {
-           await syncFromSupabase(session.user.id, 'alaias-storage');
-           await useAppStore.persist.rehydrate();
-           useAppStore.getState().setAuthenticated(true);
-        }
-      } else {
-        setAuthenticated(false);
-      }
-    });
+    initializeAuth();
 
-    return () => subscription.unsubscribe();
+    let subscription: any = null;
+    if (supabase) {
+      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+          setAuthenticated(true);
+          if (!useAppStore.getState().userName) {
+             setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.nickname || session.user.email?.split('@')[0] || 'Usuário');
+          }
+          if (event === 'SIGNED_IN') {
+             await syncFromSupabase(session.user.id, 'alaias-storage');
+             await useAppStore.persist.rehydrate();
+             useAppStore.getState().setAuthenticated(true);
+          }
+        } else {
+          setAuthenticated(false);
+        }
+      });
+      subscription = data?.subscription;
+    }
+
+    return () => {
+      mounted = false;
+      if (subscription) subscription.unsubscribe();
+    };
   }, [setAuthenticated, setUserName]);
 
   if (isInitializing) {
