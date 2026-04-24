@@ -40,7 +40,7 @@ export default function App() {
       if (session?.user) {
         setAuthenticated(true);
         if (!useAppStore.getState().userName) {
-           setUserName(session.user.user_metadata?.nickname || session.user.email?.split('@')[0] || 'Usuário');
+           setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.nickname || session.user.email?.split('@')[0] || 'Usuário');
         }
         await syncFromSupabase(session.user.id, 'alaias-storage');
         await useAppStore.persist.rehydrate();
@@ -55,7 +55,7 @@ export default function App() {
       if (session?.user) {
         setAuthenticated(true);
         if (!useAppStore.getState().userName) {
-           setUserName(session.user.user_metadata?.nickname || session.user.email?.split('@')[0] || 'Usuário');
+           setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.nickname || session.user.email?.split('@')[0] || 'Usuário');
         }
         if (event === 'SIGNED_IN') {
            await syncFromSupabase(session.user.id, 'alaias-storage');
