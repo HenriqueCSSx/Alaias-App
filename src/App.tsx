@@ -39,7 +39,8 @@ export default function App() {
            setUserName(session.user.user_metadata?.nickname || session.user.email?.split('@')[0] || 'Usuário');
         }
         await syncFromSupabase(session.user.id, 'alaias-storage');
-        useAppStore.persist.rehydrate();
+        await useAppStore.persist.rehydrate();
+        useAppStore.getState().setAuthenticated(true);
       }
     });
 
@@ -53,7 +54,8 @@ export default function App() {
         }
         if (event === 'SIGNED_IN') {
            await syncFromSupabase(session.user.id, 'alaias-storage');
-           useAppStore.persist.rehydrate();
+           await useAppStore.persist.rehydrate();
+           useAppStore.getState().setAuthenticated(true);
         }
       } else {
         setAuthenticated(false);

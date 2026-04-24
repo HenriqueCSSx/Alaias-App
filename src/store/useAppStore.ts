@@ -452,6 +452,10 @@ export const useAppStore = create<AppState>()(
     {
       name: 'alaias-storage',
       storage: createJSONStorage(() => hybridStorage),
+      partialize: (state) => {
+        const { isAuthenticated, ...rest } = state;
+        return rest as any;
+      },
     }
   )
 );
