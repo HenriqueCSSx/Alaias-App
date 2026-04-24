@@ -27,9 +27,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const { setAuthenticated, setUserName } = useAppStore();
+  const [isInitializing, setIsInitializing] = React.useState(true);
 
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase) {
+      setIsInitializing(false);
+      return;
+    }
 
     // Check initial session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -42,6 +46,7 @@ export default function App() {
         await useAppStore.persist.rehydrate();
         useAppStore.getState().setAuthenticated(true);
       }
+      setIsInitializing(false);
     });
 
     const {
@@ -64,6 +69,14 @@ export default function App() {
 
     return () => subscription.unsubscribe();
   }, [setAuthenticated, setUserName]);
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#4ade80] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter>

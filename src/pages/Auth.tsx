@@ -25,6 +25,14 @@ export function Auth() {
     if (isAuthenticated) {
       navigate('/');
     }
+    
+    // Check for errors in URL from OAuth redirect
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const queryParams = new URLSearchParams(window.location.search);
+    const err = hashParams.get('error_description') || queryParams.get('error_description') || hashParams.get('error') || queryParams.get('error');
+    if (err) {
+      setErrorMsg(decodeURIComponent(err.replace(/\+/g, ' ')));
+    }
   }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
