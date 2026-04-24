@@ -36,24 +36,16 @@ export default function App() {
     }
 
     // Check initial session
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      try {
-        if (session?.user) {
-          setAuthenticated(true);
-          if (!useAppStore.getState().userName) {
-             setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.nickname || session.user.email?.split('@')[0] || 'Usuário');
-          }
-          await syncFromSupabase(session.user.id, 'alaias-storage');
-          await useAppStore.persist.rehydrate();
-          useAppStore.getState().setAuthenticated(true);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        setAuthenticated(true);
+        if (!useAppStore.getState().userName) {
+           setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.nickname || session.user.email?.split('@')[0] || 'Usuário');
         }
-      } catch (err) {
-        console.error("Error during initialization:", err);
-      } finally {
-        setIsInitializing(false);
+        await syncFromSupabase(session.user.id, 'alaias-storage');
+        await useAppStore.persist.rehydrate();
+        useAppStore.getState().setAuthenticated(true);
       }
-    }).catch((err) => {
-      console.error("Error getting session:", err);
       setIsInitializing(false);
     });
 
@@ -66,13 +58,9 @@ export default function App() {
            setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.nickname || session.user.email?.split('@')[0] || 'Usuário');
         }
         if (event === 'SIGNED_IN') {
-           try {
-             await syncFromSupabase(session.user.id, 'alaias-storage');
-             await useAppStore.persist.rehydrate();
-             useAppStore.getState().setAuthenticated(true);
-           } catch (err) {
-             console.error("Error syncing during SIGNED_IN:", err);
-           }
+           await syncFromSupabase(session.user.id, 'alaias-storage');
+           await useAppStore.persist.rehydrate();
+           useAppStore.getState().setAuthenticated(true);
         }
       } else {
         setAuthenticated(false);
