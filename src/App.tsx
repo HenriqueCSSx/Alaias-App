@@ -37,16 +37,21 @@ export default function App() {
 
     // Check initial session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        setAuthenticated(true);
-        if (!useAppStore.getState().userName) {
-           setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.nickname || session.user.email?.split('@')[0] || 'Usuário');
+      try {
+        if (session?.user) {
+          setAuthenticated(true);
+          if (!useAppStore.getState().userName) {
+             setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.nickname || session.user.email?.split('@')[0] || 'Usuário');
+          }
+          await syncFromSupabase(session.user.id, 'alaias-storage');
+          await useAppStore.persist.rehydrate();
+          useAppStore.getState().setAuthenticated(true);
         }
-        await syncFromSupabase(session.user.id, 'alaias-storage');
-        await useAppStore.persist.rehydrate();
-        useAppStore.getState().setAuthenticated(true);
+      } catch (e) {
+        console.error('Error during initial session load:', e);
+      } finally {
+        setIsInitializing(false);
       }
-      setIsInitializing(false);
     });
 
     const {
